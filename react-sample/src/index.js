@@ -46,6 +46,9 @@ class Board extends React.Component {
   handleClick(i) {
     //stateを更新する一般的な流れ。①:更新したいstateを新しい変数に入れる。参照渡しさせない意図がある。=> ②:①で作ったのを更新する。=> ③:setStateで更新する！
     const squares = this.state.squares.slice(); //参照されないために新規で配列作り直している。
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
     squares[i] = this.state.xIsNext ? "X" : "O"; //squares配列を更新
     this.setState({
       squares: squares,
@@ -59,7 +62,16 @@ class Board extends React.Component {
   }
 
   render() {
-    const status = "Next player: " + (this.state.xIsNext ? "X" : "O");
+    // const status = "Next player: " + (this.state.xIsNext ? "X" : "O");
+
+    const winner = calculateWinner(this.state.squares);
+    let status;
+    if (winner) {
+      //演算子なしの場合、数値であれば0より上、文字であれば１文字以上でtrueが返されるらしい。
+      status = "Winner: " + winner;
+    } else {
+      status = "Next player" + (this.state.xIsNext ? "X" : "O");
+    }
 
     return (
       <div>
@@ -104,3 +116,23 @@ class Game extends React.Component {
 // ========================================
 
 ReactDOM.render(<Game />, document.getElementById("root"));
+
+function calculateWinner(squares) {
+  const lines = [
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6],
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const [a, b, c] = lines[i];
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a];
+    }
+  }
+  return null;
+}
