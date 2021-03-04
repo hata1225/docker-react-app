@@ -43,39 +43,25 @@ class Board extends React.Component {
     };
   }
 
-  handleClick(i) {
-    //stateを更新する一般的な流れ。①:更新したいstateを新しい変数に入れる。参照渡しさせない意図がある。=> ②:①で作ったのを更新する。=> ③:setStateで更新する！
-    const squares = this.state.squares.slice(); //参照されないために新規で配列作り直している。
-    if (calculateWinner(squares) || squares[i]) {
-      return;
-    }
-    squares[i] = this.state.xIsNext ? "X" : "O"; //squares配列を更新
-    this.setState({
-      squares: squares,
-      xIsNext: !this.state.xIsNext,
-    }); //stateを更新
-  }
-
   renderSquare(i) {
     //valueとonClickがSquareコンポーネントにpropsとして渡されている。
-    return <Square value={this.state.squares[i]} onClick={() => this.handleClick(i)} />;
+    return <Square value={this.props.squares[i]} onClick={() => this.props.onClick(i)} />;
   }
 
   render() {
-    // const status = "Next player: " + (this.state.xIsNext ? "X" : "O");
+    // // const status = "Next player: " + (this.state.xIsNext ? "X" : "O");
 
-    const winner = calculateWinner(this.state.squares);
-    let status;
-    if (winner) {
-      //演算子なしの場合、数値であれば0より上、文字であれば１文字以上でtrueが返されるらしい。
-      status = "Winner: " + winner;
-    } else {
-      status = "Next player" + (this.state.xIsNext ? "X" : "O");
-    }
+    // const winner = calculateWinner(this.state.squares);
+    // let status;
+    // if (winner) {
+    //   //演算子なしの場合、数値であれば0より上、文字であれば１文字以上でtrueが返されるらしい。
+    //   status = "Winner: " + winner;
+    // } else {
+    //   status = "Next player" + (this.state.xIsNext ? "X" : "O");
+    // }
 
     return (
       <div>
-        <div className="status">{status}</div>
         <div className="board-row">
           {this.renderSquare(0)}
           {this.renderSquare(1)}
@@ -98,15 +84,75 @@ class Board extends React.Component {
 
 // Gameコンポーネント
 class Game extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      history: [
+        {
+          squares: Array(9).fill(null),
+        },
+      ],
+      stepNumber: 0,
+      xIsNext: true,
+    };
+  }
+
+  handleClick(i) {
+    const history = this.state.history.slice(0, this.state.stepNumber + 1);
+    const current = history[history.length - 1];
+    const squares = current.squares.slice(); //参照されないために新規で配列作り直している。
+    //stateを更新する一般的な流れ。①:更新したいstateを新しい変数に入れる。参照渡しさせない意図がある。=> ②:①で作ったのを更新する。=> ③:setStateで更新する！
+    if (calculateWinner(squares) || squares[i]) {
+      return;
+    }
+    squares[i] = this.state.xIsNext ? "X" : "O"; //squares配列を更新
+    this.setState({
+      history: history.concat([
+        {
+          squares: squares,
+        },
+      ]),
+      stepNumber: history.length,
+      xIsNext: !this.state.xIsNext,
+    }); //stateを更新
+  }
+
+  jumpTo(step) {
+    this.setState({
+      stepNumber: step,
+      xIsNext: step % 2 === 0,
+    });
+  }
+
   render() {
+    const history = this.state.history;
+    const current = history[this.state.stepNumber];
+    const winner = calculateWinner(current.squares);
+
+    const moves = history.map((step, move) => {
+      const desc = move ? "Go to move#" + move : "GO to game start";
+      return (
+        <li key={move}>
+          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+        </li>
+      );
+    });
+
+    let status;
+    if (winner) {
+      status = "Winner" + winner;
+    } else {
+      status = "Next player: " + (this.state.xIsNext ? "X" : "O");
+    }
+
     return (
       <div className="game">
         <div className="game-board">
-          <Board />
+          <Board squares={current.squares} onClick={(i) => this.handleClick(i)} />
         </div>
         <div className="game-info">
-          <div>{/* status */}</div>
-          <ol>{/* TODO */}</ol>
+          <div>{status}</div>
+          <ol>{moves}</ol>
         </div>
       </div>
     );
